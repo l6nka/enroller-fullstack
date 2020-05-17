@@ -13,6 +13,7 @@
     <div v-else>
       <button @click="registering = false" :class="registering ? 'button-outline' : ''">Logowanie</button>
       <button @click="registering = true">Rejestruj się</button>
+      <div v-if="error" class="error-msg">{{ error }}</div>
       <login-form @login="login($event)" v-if="registering == false"></login-form>
       <login-form @login="register($event)" button-label="Zarejestruj się" v-if="registering == true"></login-form>
     </div>
@@ -29,7 +30,8 @@
         data() {
             return {
                 authenticatedUsername: "",
-                registering: false
+                registering: false,
+                error: ''
             };
         },
         methods: {
@@ -37,12 +39,15 @@
                 this.authenticatedUsername = user.login;
             },
             register(user) {
+                this.error = '';
                 this.$http.post('participants', user)
                     .then(response => {
                       // ok
                     })
                     .catch(response => {
-                      // nie ok
+                      if (response.status == 409) {
+                        this.error = "Taki użytkownik już istnieje";
+                      }
                     })
             },
             logout() {
@@ -60,6 +65,13 @@
 
   .logo {
     vertical-align: middle;
+  }
+
+  .error-msg {
+    padding: 10 px;
+    border: 2px outset rgba(164,71,71,0.07);
+    -webkit-box-shadow: 5px 5px 15px 5px #FF3E7B;
+    box-shadow: 5px 5px 15px 5px #FF3E7B;
   }
 </style>
 
