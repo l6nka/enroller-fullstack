@@ -26,22 +26,55 @@
         props: ['username'],
         data() {
             return {
-                meetings: []
+                meetings: [],
             };
         },
         methods: {
-            addNewMeeting(meeting) {
-                this.meetings.push(meeting);
+            async addNewMeeting(meeting) {
+                await this.$http.post('meetings', meeting);
+                await this.getAllMeetings();
             },
-            addMeetingParticipant(meeting) {
-                meeting.participants.push(this.username);
+
+            async addMeetingParticipant(meeting) {
+                var participantBody = {"login": this.username};
+                await this.$http.post('meetings/' + meeting.id + '/participants', participantBody);
+                await this.getAllMeetings();
             },
-            removeMeetingParticipant(meeting) {
-                meeting.participants.splice(meeting.participants.indexOf(this.username), 1);
+
+            async removeMeetingParticipant(meeting) {
+                await this.$http.delete('meetings/' + meeting.id + '/participants/' + this.username);
+                await this.getAllMeetings();
+
             },
-            deleteMeeting(meeting) {
-                this.meetings.splice(this.meetings.indexOf(meeting), 1);
-            }
+
+            async getMeetingParticipants(meeting) {
+                var participantList = [];
+                var participantsResp = (await this.$http.get('meetings/' + meeting.id + '/participants')).body;
+                for (var participantResp of participantsResp) {
+                    participantList.push(participantResp.login);
+                }
+                return participantList;
+            },
+
+            async deleteMeeting(meeting) {
+                await this.$http.delete('meetings/' + meeting.id);
+                await this.getAllMeetings();
+            },
+
+            async getAllMeetings() {
+                this.meetings = [];
+                var meetingsResp = [];
+                var meetingsResp = (await this.$http.get('meetings')).body;
+                for (var meeting of meetingsResp) {
+                    meeting.participants = await this.getMeetingParticipants(meeting);
+                    this.meetings.push(meeting);
+                }
+            },
+
+        },
+        async created() {
+            await this.getAllMeetings();
         }
+
     }
 </script>
